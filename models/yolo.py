@@ -139,11 +139,13 @@ class Model(nn.Module):
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
 
-            if profile:
-                o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPS
+             if profile:
+                inp = x.detach() if isinstance(x, torch.Tensor) else [i.detach() for i in x]
+                o = thop.profile(m, inputs=(inp,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPS
                 t = time_synchronized()
                 for _ in range(10):
-                    _ = m(x)
+                    inp = x.detach() if isinstance(x, torch.Tensor) else [i.detach() for i in x]
+                    _ = m(inp)
                 dt.append((time_synchronized() - t) * 100)
                 if m == self.model[0]:
                     logger.info(f"{'time (ms)':>10s} {'GFLOPS':>10s} {'params':>10s}  {'module'}")
